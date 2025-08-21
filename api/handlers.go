@@ -1,12 +1,14 @@
 package api
+
 import (
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
-	"net/http"
-	"os"
 )
 
 var DB *gorm.DB
@@ -35,7 +37,7 @@ func CreateBook(c *gin.Context) {
 
 	//bind the request body
 	if err := c.ShouldBindJSON(&book); err != nil {
-		ResponseJSON(c, http.StatusBadRequest, "Invalid input", nil) 
+		ResponseJSON(c, http.StatusBadRequest, "Invalid input", nil)
 		return
 	}
 	DB.Create(&book)
@@ -59,5 +61,26 @@ func GetBook(c *gin.Context) {
 
 func UpdateBook(c *gin.Context) {
 	var book Book
-	if err := DB
+	if err := DB.First(&book, c.Param("id")).Error; err != nil {
+		ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
+		return
+	}
+
+	//bind the requet body
+	if err := c.ShouldBindJSON(&book); err != nil {
+		ResponseJSON(c, http.StatusBadRequest, "Invalid input", nil)
+		return
+	}
+
+	DB.Save(&book)
+	ResponseJSON(c, http.StatusOK, "Book updated successfully", book)
+}
+
+func DeleteBook(c *gin.Context) {
+	var book Book
+	if err := DB.Delete(&book, c.Param("id")).Error; err != nil {
+		ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
+		return
+	}
+	ResponseJSON(c, http.StatusOK, "Book deleted successfully", nil)
 }
