@@ -53,3 +53,25 @@ func TestCreateBook(t *testing.T) {
 		t.Errorf("Expected book data got nil")
 	}
 }
+
+func TestGetBooks(t *tessting.T) {
+	setupTestDB()
+	addBook()
+	router := gin.Default()
+	router.GET("/books", api.GetBooks)
+
+	req, _ := http.NewRequest("GET", "/books", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("expected status %d got %d", http.StatusOK, status)
+	}
+
+	var response api.JsonResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if len(response.Data.([]interface{})) == 0 {
+		t.Errorf("Expected non empty book list")
+	}
+}
