@@ -9,22 +9,41 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 
 func InitDB() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Failed to connect to database : ", err)
-	}
-
+	_ = godotenv.Load()
 	dsn := os.Getenv("DB_URL")
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	if dsn == "" {
+		log.Fatal("DB_URL is empty")
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Warn),
+	})
 
 	if err != nil {
 		log.Fatal("Failed to connect to database : ", err)
 	}
+
+	//test connection
+	sqlDB, err := db.DB()
+
+	if err != nil {
+		log.Fatal("Failed to get sql DB from gorm : ", err)
+	}
+
+	if err := sqlDB.Ping(); err != nil {
+		log.Fatal("Failed to ping database : ", err)
+	}
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(25)
+
+	DB = db
 
 	//migrate the schema
 	if err := DB.AutoMigrate(&Book{}); err != nil {
@@ -40,8 +59,11 @@ func CreateBook(c *gin.Context) {
 		ResponseJSON(c, http.StatusBadRequest, "Invalid input", nil)
 		return
 	}
-	DB.Create(&book)
-	ResponseJSON(c, http.StatusAccepted, "Book created successfully", book)
+	if err := DB.WithContext(c.Request.Context()).Create(&book).Error; err != nil {
+		ResponseJSON(c, http.StatusInternalServerError, "Failed to create book", nil)
+		return
+	}
+	ResponseJSON(c, http.StatusCreated, "Book created successfully", book)
 }
 
 func GetBooks(c *gin.Context) {
