@@ -102,3 +102,30 @@ func TestUpdateBook(t *testing.T) {
 		t.Errorf("Expected update book title got %v", response.Data)
 	}
 }
+
+func TestDeleteBook(t *testing.T) {
+	setupTestDB()
+	book := addBook()
+	router := gin.Default()
+	router.DELETE("/book/:id", api.DeleteBook)
+
+	req, _ := http.NewRequest("DELETE", "/book/"+strconv.Itoa(int(book.ID)), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("expected status %d  got %d ", http.StatusOK, status)
+	}
+
+	var response api.JsonResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Message != "Book deleted successfully" {
+		t.Errorf("Expected delete message 'Book deleted successfully' got %v", response.Message)
+	}
+	var deletedBook api.Book
+	result := api.DB.First(&deletedBook, book.ID)
+	if result.Error == nil {
+		t.Errorf("Expected book to be deleted but it still exist")
+	}
+}
