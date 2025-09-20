@@ -60,7 +60,7 @@ func CreateBook(c *gin.Context) {
 		return
 	}
 	if err := DB.WithContext(c.Request.Context()).Create(&book).Error; err != nil {
-		ResponseJSON(c, http.StatusInternalServerError, "Failed to create book", nil)
+		ResponseJSON(c, http.StatusInternalServerError, "Failed to create book", err.Error())
 		return
 	}
 	ResponseJSON(c, http.StatusCreated, "Book created successfully", book)
@@ -73,36 +73,63 @@ func GetBooks(c *gin.Context) {
 }
 
 func GetBook(c *gin.Context) {
-	var book Book
-	if err := DB.First(&book, c.Param("id")).Error; err != nil {
-		ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
-		return
-	}
-	ResponseJSON(c, http.StatusOK, "Book retrieved successfully", book)
+    var book Book
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        ResponseJSON(c, http.StatusBadRequest, "Invalid ID", nil)
+        return
+    }
+
+    if err := DB.First(&book, id).Error; err != nil {
+        ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
+        return
+    }
+
+    ResponseJSON(c, http.StatusOK, "Book retrieved successfully", book)
 }
+
 
 func UpdateBook(c *gin.Context) {
-	var book Book
-	if err := DB.First(&book, c.Param("id")).Error; err != nil {
-		ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
-		return
-	}
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        ResponseJSON(c, http.StatusBadRequest, "Invalid ID", nil)
+        return
+    }
 
-	//bind the requet body
-	if err := c.ShouldBindJSON(&book); err != nil {
-		ResponseJSON(c, http.StatusBadRequest, "Invalid input", nil)
-		return
-	}
+    var book Book
+    if err := DB.First(&book, id).Error; err != nil {
+        ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
+        return
+    }
 
-	DB.Save(&book)
-	ResponseJSON(c, http.StatusOK, "Book updated successfully", book)
+    var input Book
+    if err := c.ShouldBindJSON(&input); err != nil {
+        ResponseJSON(c, http.StatusBadRequest, "Invalid input", err.Error())
+        return
+    }
+
+    if err := DB.Model(&book).Updates(input).Error; err != nil {
+        ResponseJSON(c, http.StatusInternalServerError, "Failed to update book", nil)
+        return
+    }
+
+    ResponseJSON(c, http.StatusOK, "Book updated successfully", book)
 }
+
 
 func DeleteBook(c *gin.Context) {
-	var book Book
-	if err := DB.Delete(&book, c.Param("id")).Error; err != nil {
-		ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
-		return
-	}
-	ResponseJSON(c, http.StatusOK, "Book deleted successfully", nil)
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        ResponseJSON(c, http.StatusBadRequest, "Invalid ID", nil)
+        return
+    }
+
+    result := DB.Delete(&Book{}, id)
+    if result.RowsAffected == 0 {
+        ResponseJSON(c, http.StatusNotFound, "Book not found", nil)
+        return
+    }
+
+    ResponseJSON(c, http.StatusOK, "Book deleted successfully", nil)
 }
+

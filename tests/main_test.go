@@ -33,8 +33,7 @@ func TestCreateBook(t *testing.T) {
 	setupTestDB()
 	router := gin.Default()
 	router.POST("/book", api.CreateBook)
-
-<<<<<<< HEAD
+	
 	book := api.Book{
 		Title:  "Raja Gorong-gorong",
 		Author: "Girban",
