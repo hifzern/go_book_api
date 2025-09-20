@@ -4,9 +4,9 @@ import "github.com/gin-gonic/gin"
 
 type Book struct {
 	ID     uint   `json:"id" gorm:"primaryKey"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-	Year   int    `json:"year"`
+	Title  string `json:"title" binding:"required"`
+	Author string `json:"author" binding:"required"`
+	Year   int    `json:"year" binding:"required,len=13"`
 }
 
 type JsonResponse struct {
