@@ -6,7 +6,7 @@ type Book struct {
 	ID     uint   `json:"id" gorm:"primaryKey"`
 	Title  string `json:"title" binding:"required"`
 	Author string `json:"author" binding:"required"`
-	Year   int    `json:"year" binding:"required,len=13"`
+	Year   int    `json:"year" binding:"required"`
 }
 
 type JsonResponse struct {
@@ -24,3 +24,4 @@ func ResponseJSON(c *gin.Context, status int, message string, data any) {
 
 	c.JSON(status, response)
 }
+
