@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -68,9 +69,19 @@ func CreateBook(c *gin.Context) {
 
 func GetBooks(c *gin.Context) {
 	var books []Book
-	DB.Find(&books)
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	offset := (page - 1) * limit
+
+	if err := DB.Limit(limit).Offset(offset).Find(&books).Error; err != nil {
+		ResponseJSON(c, http.StatusInternalServerError, "Failed to retrieve books", nil)
+		return
+	}
+
 	ResponseJSON(c, http.StatusOK, "Books retrieved successfully", books)
 }
+
 
 func GetBook(c *gin.Context) {
     var book Book

@@ -6,7 +6,11 @@ type Book struct {
 	ID     uint   `json:"id" gorm:"primaryKey"`
 	Title  string `json:"title" binding:"required"`
 	Author string `json:"author" binding:"required"`
-	Year   int    `json:"year" binding:"required"`
+	Year	int    `json:"year" binding:"required,gte=1000,lte=2100"`
+	CoverURL string `json:"cover_url"`
+	Description string `json:"description"`
+	Genre     string `json:"genre"`
+
 }
 
 type JsonResponse struct {
@@ -16,12 +20,15 @@ type JsonResponse struct {
 }
 
 func ResponseJSON(c *gin.Context, status int, message string, data any) {
-	response := JsonResponse{
-		Status:  status,
-		Message: message,
-		Data:    data,
+	resp := gin.H{
+		"status":  status,
+		"message": message,
 	}
-
-	c.JSON(status, response)
+	if data != nil {
+		resp["data"] = data
+	}
+	c.JSON(status, resp)
 }
+
+
 
